@@ -9,6 +9,8 @@
       "skipLibCheck": true,
       "resolveJsonModule": true,
       "moduleResolution": "nodenext",
-      "types": ["node"]
+      "types": ["node"],
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true
     }
   }
