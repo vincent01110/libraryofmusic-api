@@ -6,6 +6,7 @@ import { container } from 'tsyringe';
 import Logger from './utils/Logger';
 import { loggerMiddleware } from './middlewares/LoggerMiddleware';
 import { Transport } from './models/interfaces/ITransport';
+import { MongoClient } from './utils/MongoClient';
 
 dotenv.config();
 
@@ -13,6 +14,11 @@ const app: Express = express();
 
 const port = process.env.PORT || 3001;
 const logger = container.resolve(Logger);
+const mongoClient = container.resolve(MongoClient);
+mongoClient.connect().catch((error) => {
+    logger.error(`Connection error: ${(error as Error).message}`);
+    process.exit(1);
+});
 
 app.use(cors());
 
