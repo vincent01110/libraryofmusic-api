@@ -5,6 +5,8 @@ import { ShelfController } from '../../../controllers/v1/shelf/ShelfController';
 const shelfRouter = Router();
 const shelfController = container.resolve(ShelfController);
 
+shelfRouter.get('/', shelfController.getShelves);
+
 shelfRouter.post('/', shelfController.createShelf);
 
 export default shelfRouter;

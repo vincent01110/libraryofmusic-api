@@ -23,6 +23,8 @@ mongoClient.connect().catch((error) => {
 
 app.use(cors());
 
+app.use(express.json());
+
 app.use(loggerMiddleware);
 
 app.use('/v1', v1Router);

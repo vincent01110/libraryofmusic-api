@@ -1,5 +1,6 @@
 import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
+import { Album } from './Album';
 
 @modelOptions({
     schemaOptions: {
@@ -19,13 +20,13 @@ export class Shelf {
     @prop()
     public color: string;
 
-    @prop({type: [String]})
-    public items: string[];
+    @prop({type: () => Album})
+    public items: Album[];
 
     @prop({required: true})
     public createdAt: Date;
 
-    constructor (user: string, name: string, color: string, items: string[], createdAt: Date) {
+    constructor (user: string, name: string, color: string, items: Album[], createdAt: Date) {
         this.user = user;
         this.name = name;
         this.color = color;
