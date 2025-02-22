@@ -7,6 +7,7 @@ import Logger from './utils/Logger';
 import { loggerMiddleware } from './middlewares/LoggerMiddleware';
 import { Transport } from './models/interfaces/ITransport';
 import { MongoClient } from './utils/MongoClient';
+import v1Router from './routes/v1/v1Router';
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ mongoClient.connect().catch((error) => {
 app.use(cors());
 
 app.use(loggerMiddleware);
+
+app.use('/v1', v1Router);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Express + TypeScript Server');
