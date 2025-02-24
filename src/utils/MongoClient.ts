@@ -24,7 +24,9 @@ export class MongoClient {
 
     public async connect(): Promise<mongoose.Mongoose> {
         try {
-            const client = await mongoose.connect(this.url);
+            const client = await mongoose.connect(this.url, {
+                dbName: process.env.MONGO_DB_NAME || 'LibraryOfMusic'
+            });
             this.logger.info('Connected to MongoDB');
 
             return client;

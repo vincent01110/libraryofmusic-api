@@ -18,6 +18,7 @@
   "main": "index.js",
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@stylistic/eslint-plugin-ts": "^4.0.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/mongoose": "^5.11.96",

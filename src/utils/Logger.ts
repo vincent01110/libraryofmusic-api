@@ -12,9 +12,10 @@ export default class Logger {
     private logger: winston.Logger;
     private fileLoggers = Map<string, winston.Logger>();
     private date = moment();
+    private format;
 
     constructor() {
-        const myFormat = winston.format.printf(({ level, message, timestamp, ms }) => {
+        this.format = winston.format.printf(({ level, message, timestamp, ms }) => {
             // Narrow the type of timestamp
             const time = typeof timestamp === 'string' || timestamp instanceof Date
                 ? moment(timestamp).format('YYYY-MM-DD HH:mm:ss')
@@ -32,7 +33,7 @@ export default class Logger {
                 winston.format.colorize(),
                 winston.format.timestamp(),
                 winston.format.ms(),
-                myFormat
+                this.format
             ),
             transports: [
                 new winston.transports.Console({ level: 'debug' })
@@ -57,7 +58,7 @@ export default class Logger {
     }
 
     public logToCustomFile(message: string, fileName: string) {
-        const path = `${process.cwd()}/logs/${this.date.format('YMMDD-HHmmss')}/${fileName.split('.')[0]}.log`;
+        const path = `${process.cwd()}/logs/${this.date.format('Y-MM-DD')}/${fileName.split('.')[0]}.log`;
         const dir = path.split('/').slice(0, -1).join('/');
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -91,6 +92,11 @@ export default class Logger {
         const logDirectory = this.getDirectory();
 
         const tempLogger = winston.createLogger({
+            format: winston.format.combine(
+                winston.format.timestamp(),
+                winston.format.ms(),
+                this.format
+            ),
             transports: [
                 new winston.transports.File({ filename: path.join(logDirectory, `${level}.log`), level })
             ]
@@ -104,7 +110,7 @@ export default class Logger {
         const dir = path.join(
             process.cwd(),
             'logs',
-            this.date.format('YYYYMMDD-HHmmss')
+            this.date.format('YYYY-MM-DD')
         );
 
         if (!fs.existsSync(dir)) {

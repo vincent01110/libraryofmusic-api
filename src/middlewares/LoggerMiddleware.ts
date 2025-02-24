@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { container } from 'tsyringe';
 import Logger from '../utils/Logger';
+import { Transport } from '../models/interfaces/ITransport';
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const logger = container.resolve(Logger);
@@ -13,7 +14,7 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
         if (statusCategory === 4 || statusCategory === 5) {
             logger.error(message);
         } else {
-            logger.info(message);
+            logger.info(message, Transport.ALL);
         }
     });
 
