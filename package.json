@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@spotify/web-api-ts-sdk": "^1.2.0",
     "@typegoose/typegoose": "^12.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
