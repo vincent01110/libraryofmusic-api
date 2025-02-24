@@ -5,13 +5,13 @@ export class Image {
     @prop()
     public _id!: mongoose.Types.ObjectId;
 
-    @prop()
+    @prop({ required: true })
     public height: number;
 
-    @prop()
+    @prop({ required: true })
     public width: number;
 
-    @prop()
+    @prop({ required: true })
     public url: string;
 
     constructor(height: number, width: number, url: string) {

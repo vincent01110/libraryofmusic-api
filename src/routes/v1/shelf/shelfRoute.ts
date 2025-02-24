@@ -7,6 +7,12 @@ const shelfController = container.resolve(ShelfController);
 
 shelfRouter.get('/', shelfController.getShelves);
 
+shelfRouter.get('/:id', shelfController.getShelfById);
+
 shelfRouter.post('/', shelfController.createShelf);
+
+shelfRouter.put('/:id', shelfController.updateShelf);
+
+shelfRouter.delete('/:id', shelfController.deleteShelfById);
 
 export default shelfRouter;

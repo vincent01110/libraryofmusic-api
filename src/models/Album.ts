@@ -6,13 +6,13 @@ export class Album {
     @prop()
     public _id!: mongoose.Types.ObjectId;
 
-    @prop()
+    @prop({ required: true })
     public id: string;
 
-    @prop()
+    @prop({ required: true })
     public name: string;
 
-    @prop({type: () => Image})
+    @prop({ type: () => Image, required: true })
     public images: Image[];
 
     constructor(id: string, name: string, images: Image[]) {
