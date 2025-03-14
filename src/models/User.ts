@@ -7,7 +7,7 @@ import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 })
 export class User {
     @prop({ required: true})
-    public name: string;
+    public email: string;
 
     @prop({ required: true })
     public createdAt: Date;
@@ -15,8 +15,8 @@ export class User {
     @prop({ required: true })
     public lastLoggedIn: Date;
 
-    constructor(name: string, createdAt: Date, lastLoggedIn: Date) {
-        this.name = name;
+    constructor(email: string, createdAt: Date, lastLoggedIn: Date) {
+        this.email = email;
         this.createdAt = createdAt;
         this.lastLoggedIn = lastLoggedIn;
     }

@@ -1,9 +1,8 @@
 import { autoInjectable } from 'tsyringe';
 import { BaseController } from '../BaseController';
 import { Request, Response } from 'express';
-import { PostBack } from '../../../models/interfaces/IPostBack';
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { UserModel } from '../../../models/User';
+import { LoginUser } from '../../../models/interfaces/ILoginUser';
 
 @autoInjectable()
 export class AuthController extends BaseController {
@@ -14,23 +13,14 @@ export class AuthController extends BaseController {
     }
 
     async logIn(req: Request, res: Response) {
-        const authData: PostBack = req.body;
-        const clientId = process.env.SPOTIFY_CLIENT_ID;
-
-        if (!clientId) {
-            res.send(500).send('Internal Server Error!');
-            return;
-        }
-
         try {
-            const sdk = SpotifyApi.withAccessToken(clientId, authData);
-            const spotifyUser = await sdk.currentUser.profile();
+            const rawUser: LoginUser = req.body;
 
-            const user = await UserModel.findOne({ name: spotifyUser.id});
+            const user = await UserModel.findOne({ email: rawUser.user.email});
 
             if (!user) {
                 await UserModel.create({
-                    name: spotifyUser.id,
+                    email: rawUser.user.email,
                     createdAt: new Date(Date.now()),
                     lastLoggedIn: new Date(Date.now()),
                 });
