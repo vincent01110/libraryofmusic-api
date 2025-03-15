@@ -3,7 +3,7 @@ import { Map } from 'immutable';
 import moment from 'moment';
 import fs from 'fs';
 import path from 'path';
-import { Transport } from '../models/interfaces/ITransport';
+import { Transport } from '../models/interfaces/ETransport';
 import { injectable, singleton } from 'tsyringe';
 
 @singleton()

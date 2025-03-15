@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { container } from 'tsyringe';
 import Logger from '../utils/Logger';
-import { Transport } from '../models/interfaces/ITransport';
+import { Transport } from '../models/interfaces/ETransport';
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const logger = container.resolve(Logger);
