@@ -20,8 +20,8 @@ export class Shelf {
     @prop()
     public color: string;
 
-    @prop({type: () => Album})
-    public items: Album[];
+    @prop({type: () => Album || []})
+    public items?: Album[];
 
     @prop({required: true})
     public createdAt: Date;

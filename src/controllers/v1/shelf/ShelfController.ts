@@ -1,15 +1,14 @@
 import { Request, Response } from 'express';
 import { ShelfModel } from '../../../models/Shelf';
-import Logger from '../../../utils/Logger';
-import { autoInjectable, inject } from 'tsyringe';
+import { autoInjectable } from 'tsyringe';
+import { BaseController } from '../BaseController';
+import { getTokenFromCookie } from '../../../utils/utils';
 
 @autoInjectable()
-export class ShelfController {
-    private logger: Logger;
+export class ShelfController extends BaseController {
 
-    constructor(@inject(Logger) logger: Logger) {
-        this.logger = logger;
-
+    constructor() {
+        super();
         this.getShelves = this.getShelves.bind(this);
         this.getShelfById = this.getShelfById.bind(this);
         this.createShelf = this.createShelf.bind(this);
@@ -19,7 +18,13 @@ export class ShelfController {
 
     async getShelves(req: Request, res: Response) {
         try {
-            const shelves = await ShelfModel.find();
+            const token = getTokenFromCookie(req);
+
+            if (!token) throw new Error('Couldn\'t read token!');
+
+            const user = this.jwtService.getUser(token);
+
+            const shelves = await ShelfModel.find({ user: user });
             res.status(200).json(shelves);
             return;
         } catch (e) {
@@ -37,9 +42,15 @@ export class ShelfController {
                 return;
             }
 
-            const shelf = await ShelfModel.findById(id);
+            const token = getTokenFromCookie(req);
 
-            if (!shelf) {
+            if (!token) throw new Error('Couldn\'t read token!');
+
+            const user = this.jwtService.getUser(token);
+
+            const shelf = await ShelfModel.find({ _id: id, user: user});
+
+            if (!shelf || shelf.length === 0) {
                 res.status(404).json({ code: 404, message: `Shelf:${req.params.id} not found!` });
                 return;
             }
@@ -53,7 +64,16 @@ export class ShelfController {
 
     async createShelf(req: Request, res: Response) {
         try {
-            await ShelfModel.create({...req.body, createdAt: new Date(Date.now())});
+            const rawShelf = req.body;
+
+            const token = getTokenFromCookie(req);
+
+            if (!token) throw new Error('Couldn\'t read token!');
+
+            const user = this.jwtService.getUser(token);
+            
+            await ShelfModel.create({...rawShelf, user: user, createdAt: new Date(Date.now())});
+
             res.status(201).send('Shelf created');
             return;
         } catch (e) {
@@ -71,14 +91,20 @@ export class ShelfController {
                 return;
             }
 
-            const shelf = await ShelfModel.findByIdAndUpdate(id, req.body, { new: true });
+            const token = getTokenFromCookie(req);
+
+            if (!token) throw new Error('Couldn\'t read token!');
+
+            const user = this.jwtService.getUser(token);
+
+            const shelf = await ShelfModel.findOneAndUpdate({_id: id, user: user}, {...req.body, user: user}, { new: true });
 
             if (!shelf) {
                 res.status(404).json({ code: 404, message: 'Shelf not found!' });
                 return;
             }
-
-            res.status(200).json({ code: 200, message: 'Shelf updated successfully!', shelf });
+        
+            res.status(200).json({ code: 200, message: 'Shelf updated successfully!', shelf});
             return;
         } catch (e) {
             this.logger.error(`Error: ${(e as Error).message}`);
@@ -95,7 +121,15 @@ export class ShelfController {
                 return;
             }
 
-            const shelf = await ShelfModel.findByIdAndDelete(id);
+            const token = getTokenFromCookie(req);
+
+            if (!token) throw new Error('Couldn\'t read token!');
+
+            const user = this.jwtService.getUser(token);
+
+            this.logger.debug(user);
+
+            const shelf = await ShelfModel.findOneAndDelete({_id: id, user: user});
 
             if (!shelf) {
                 res.status(404).json({ code: 404, message: 'Shelf not found!' });
