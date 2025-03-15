@@ -5,9 +5,10 @@ import cors from 'cors';
 import { container } from 'tsyringe';
 import Logger from './utils/Logger';
 import { loggerMiddleware } from './middlewares/LoggerMiddleware';
-import { Transport } from './models/interfaces/ITransport';
+import { Transport } from './models/interfaces/ETransport';
 import { MongoClient } from './utils/MongoClient';
 import v1Router from './routes/v1/v1Router';
+import { authMiddleware } from './middlewares/AuthMiddleware';
 
 dotenv.config();
 
@@ -21,9 +22,11 @@ mongoClient.connect().catch((error) => {
     process.exit(1);
 });
 
-app.use(cors());
+app.use(cors({ credentials: true }));
 
 app.use(express.json());
+
+app.use(authMiddleware);
 
 app.use(loggerMiddleware);
 
