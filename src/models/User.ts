@@ -10,13 +10,17 @@ export class User {
     public email: string;
 
     @prop({ required: true })
+    public token: string;
+
+    @prop({ required: true })
     public createdAt: Date;
 
     @prop({ required: true })
     public lastLoggedIn: Date;
 
-    constructor(email: string, createdAt: Date, lastLoggedIn: Date) {
+    constructor(email: string, token: string, createdAt: Date, lastLoggedIn: Date) {
         this.email = email;
+        this.token = token;
         this.createdAt = createdAt;
         this.lastLoggedIn = lastLoggedIn;
     }

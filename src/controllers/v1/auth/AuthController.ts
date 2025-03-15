@@ -1,15 +1,19 @@
-import { autoInjectable } from 'tsyringe';
+import { autoInjectable, container } from 'tsyringe';
 import { BaseController } from '../BaseController';
 import { Request, Response } from 'express';
 import { UserModel } from '../../../models/User';
 import { LoginUser } from '../../../models/interfaces/ILoginUser';
+import { JWTService } from '../../../services/JWTService';
 
 @autoInjectable()
 export class AuthController extends BaseController {
+    private jwtService: JWTService;
+
 
     constructor() {
         super();
         this.logIn = this.logIn.bind(this);
+        this.jwtService = container.resolve(JWTService);
     }
 
     async logIn(req: Request, res: Response) {
@@ -19,15 +23,42 @@ export class AuthController extends BaseController {
             const user = await UserModel.findOne({ email: rawUser.user.email});
 
             if (!user) {
+                const token = this.jwtService.createJWT(rawUser.user.email);
                 await UserModel.create({
                     email: rawUser.user.email,
+                    token: token,
                     createdAt: new Date(Date.now()),
                     lastLoggedIn: new Date(Date.now()),
+                });
+                
+                res.cookie('API_TOKEN', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'strict',
+                    maxAge: 3600000
                 });
                 res.status(201).json({ code: 201, message: 'User registered!' });
                 return;
             } else {
-                await user.updateOne({lastLoggedIn: new Date(Date.now())});
+                const isTokenValid = this.jwtService.verifyJWT(user.token);
+                if (isTokenValid && rawUser.user.email === user.email) {
+                    await user.updateOne({lastLoggedIn: new Date(Date.now())});
+                    res.cookie('API_TOKEN', user.token, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'strict',
+                        maxAge: 3600000
+                    });
+                } else if (rawUser.user.email === user.email) {
+                    const token = this.jwtService.createJWT(rawUser.user.email);
+                    await user.updateOne({lastLoggedIn: new Date(Date.now())});
+                    res.cookie('API_TOKEN', token, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'strict',
+                        maxAge: 3600000
+                    });
+                }
                 res.status(200).json({ code: 200, message: 'User logged in!' });
                 return;
             }
