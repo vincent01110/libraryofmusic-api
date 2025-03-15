@@ -1,19 +1,16 @@
-import { autoInjectable, container } from 'tsyringe';
+import { autoInjectable } from 'tsyringe';
 import { BaseController } from '../BaseController';
 import { Request, Response } from 'express';
 import { UserModel } from '../../../models/User';
 import { LoginUser } from '../../../models/interfaces/ILoginUser';
-import { JWTService } from '../../../services/JWTService';
 
 @autoInjectable()
 export class AuthController extends BaseController {
-    private jwtService: JWTService;
 
 
     constructor() {
         super();
         this.logIn = this.logIn.bind(this);
-        this.jwtService = container.resolve(JWTService);
     }
 
     async logIn(req: Request, res: Response) {

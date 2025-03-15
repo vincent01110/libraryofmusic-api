@@ -8,6 +8,7 @@ import { loggerMiddleware } from './middlewares/LoggerMiddleware';
 import { Transport } from './models/interfaces/ETransport';
 import { MongoClient } from './utils/MongoClient';
 import v1Router from './routes/v1/v1Router';
+import { authMiddleware } from './middlewares/AuthMiddleware';
 
 dotenv.config();
 
@@ -24,6 +25,8 @@ mongoClient.connect().catch((error) => {
 app.use(cors({ credentials: true }));
 
 app.use(express.json());
+
+app.use(authMiddleware);
 
 app.use(loggerMiddleware);
 
