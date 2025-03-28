@@ -3,6 +3,7 @@ import { BaseController } from '../BaseController';
 import { Request, Response } from 'express';
 import { UserModel } from '../../../models/User';
 import { LoginUser } from '../../../models/interfaces/ILoginUser';
+import { LoginError } from '../../../models/errors/LoginError';
 
 @autoInjectable()
 export class AuthController extends BaseController {
@@ -16,6 +17,8 @@ export class AuthController extends BaseController {
     async logIn(req: Request, res: Response) {
         try {
             const rawUser: LoginUser = req.body;
+
+            if (!rawUser.user.email) throw new LoginError('Email required!');
 
             const user = await UserModel.findOne({ email: rawUser.user.email});
 
@@ -48,7 +51,7 @@ export class AuthController extends BaseController {
                     });
                 } else if (rawUser.user.email === user.email) {
                     const token = this.jwtService.createJWT(rawUser.user.email);
-                    await user.updateOne({lastLoggedIn: new Date(Date.now())});
+                    await user.updateOne({token: token, lastLoggedIn: new Date(Date.now())});
                     res.cookie('API_TOKEN', token, {
                         httpOnly: true,
                         secure: true,
@@ -60,8 +63,8 @@ export class AuthController extends BaseController {
                 return;
             }
         } catch (e) {
-            this.logger.error((e as Error).message);
-            throw new Error('Error identifying/creating user');
+            this.logger.error((e as LoginError).message);
+            res.status(401).json({ code: 401, message: (e as LoginError).message });
         }
     }
 }
