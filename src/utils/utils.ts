@@ -7,3 +7,7 @@ export function getTokenFromCookie(req: Request): string | null {
 
     return null;
 }
+
+export function isIdValid(id: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(id);
+}
