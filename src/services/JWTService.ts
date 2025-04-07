@@ -14,13 +14,11 @@ export class JWTService {
     }
     
     public createJWT(email: string): string{
-        const expirationTime = Math.floor(Date.now() / 1000) + 3600;
         const secret = process.env.JWT_SECRET;
         
         if (!secret) throw new Error('JWT secret not found');
 
-        const token = jwt.sign({email, expires: expirationTime}, secret);
-        this.logger.debug(token);
+        const token = jwt.sign({email}, secret, { expiresIn: '1h' });
 
         return token;
     }
@@ -40,10 +38,6 @@ export class JWTService {
     }
 
     public getUser(token: string): string {
-        const secret = process.env.JWT_SECRET;
-        
-        if (!secret) throw new Error('JWT secret not found');
-
         try {
             const decoded = jwt.decode(token);
 

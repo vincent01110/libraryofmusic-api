@@ -61,7 +61,6 @@ export class AuthController extends BaseController {
             }
         } catch (e) {
             this.logger.error((e as Error).message);
-            throw new Error('Error identifying/creating user');
         }
     }
 }
