@@ -118,7 +118,8 @@ export default class SpotifyAuthService {
             if (!response.ok) throw new Error('Couldnt get refresh token!');
 
             const newTokens: Spotify.Auth.Payload = await response.json();
-            const authData = new SpotifyAuth(newTokens.access_token, newTokens.token_type, newTokens.scope, newTokens.expires_in, newTokens.refresh_token);
+            const expiresAt = Date.now() + newTokens.expires_in * 1000; 
+            const authData = new SpotifyAuth(newTokens.access_token, newTokens.token_type, newTokens.scope, expiresAt, newTokens.refresh_token);
 
             return authData;
         } catch (e) {
