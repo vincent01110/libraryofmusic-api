@@ -77,7 +77,6 @@ export class AuthController extends BaseController {
             const now = new Date(Date.now());
 
             if (!user) {
-
                 const newUser = new User(
                     spotifyUser.email, 
                     token,
@@ -86,7 +85,14 @@ export class AuthController extends BaseController {
                     resp);
                 
                 await UserModel.create(newUser);
+                res.cookie('API_TOKEN', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'strict',
+                    maxAge: 3600000
+                });
                 res.redirect('http://localhost:3000');
+                return;
             } else {
                 await UserModel.updateOne({ _id: user._id }, { ...user.toObject(), lastLoggedIn: now, token, resp });
 
