@@ -13,23 +13,17 @@ export default class SpotifyClient {
     }
 
     public async getUserInfo(accessToken: string): Promise<Spotify.User.UserInfo | null>  {
-        try {
-            const response = await fetch(`${this.apiUrl}/me`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+        const response = await fetch(`${this.apiUrl}/me`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
 
+        if (!response.ok) throw new Error('Couldnt fetch user data!');
 
-            if (!response.ok) throw new Error('Couldnt fetch user!');
+        const rawUser = await response.json();
 
-            const rawUser = await response.json();
-
-            return rawUser as Spotify.User.UserInfo;
-        } catch (e) {
-            this.logger.error((e as Error).message);
-            return null;
-        }
+        return rawUser as Spotify.User.UserInfo;
     }
 }
