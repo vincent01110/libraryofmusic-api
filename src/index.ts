@@ -9,6 +9,7 @@ import { Transport } from './models/interfaces/ETransport';
 import { MongoClient } from './utils/MongoClient';
 import v1Router from './routes/v1/v1Router';
 import { authMiddleware } from './middlewares/AuthMiddleware';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -25,6 +26,8 @@ mongoClient.connect().catch((error) => {
 app.use(cors({ credentials: true }));
 
 app.use(express.json());
+
+app.use(cookieParser());
 
 app.use(authMiddleware);
 

@@ -8,9 +8,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     const logger = container.resolve(Logger);
 
     try {
-        if (req.path.endsWith('/login')) {
+        if (req.path.endsWith('/login') || req.path.includes('/callback')) {
             next();
-            return;
         };
         
         const token = req.headers.authorization?.split(' ')[1];
