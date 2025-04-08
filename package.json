@@ -1,5 +1,10 @@
 {
+  "name": "libraryofmusic-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -12,17 +17,14 @@
     "tsyringe": "^4.8.0",
     "winston": "^3.17.0"
   },
-  "name": "libraryofmusic-api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "devDependencies": {
-    "@typegoose/typegoose": "^12.11.0",
-    "@types/jsonwebtoken": "^9.0.9",
     "@eslint/js": "^9.20.0",
     "@stylistic/eslint-plugin-ts": "^4.0.1",
+    "@typegoose/typegoose": "^12.11.0",
+    "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^22.13.4",
     "eslint": "^9.20.1",
