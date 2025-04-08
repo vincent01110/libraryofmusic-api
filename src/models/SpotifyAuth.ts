@@ -11,16 +11,16 @@ export class SpotifyAuth {
     public scope: string;
 
     @prop({ required: true })
-    public expiresIn: number;
+    public expiresAt: number;
 
     @prop({ required: true })
     public refreshToken: string;
 
-    constructor(accessToken: string, tokenType: string, scope: string, expiresIn: number, refreshToken: string) {
+    constructor(accessToken: string, tokenType: string, scope: string, expiresAt: number, refreshToken: string) {
         this.accessToken = accessToken;
         this.tokenType = tokenType;
         this.scope = scope;
-        this.expiresIn = expiresIn;
+        this.expiresAt = expiresAt;
         this.refreshToken = refreshToken;
     }
 }

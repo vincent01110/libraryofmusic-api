@@ -1,17 +1,20 @@
 import { autoInjectable } from 'tsyringe';
 import { BaseController } from '../BaseController';
 import { Request, Response } from 'express';
-import { UserModel } from '../../../models/User';
+import { User, UserModel } from '../../../models/User';
 import SpotifyAuthService from '../../../services/SpotifyAuthService';
 import { getTokenFromCookie } from '../../../utils/utils';
+import SpotifyClient from '../../../utils/SpotifyClient';
 
 @autoInjectable()
 export class AuthController extends BaseController {
     private spotifyAuthService: SpotifyAuthService;
+    private spotifyClient: SpotifyClient;
 
-    constructor(spotifyAuthService: SpotifyAuthService) {
+    constructor(spotifyAuthService: SpotifyAuthService, spotifyClient: SpotifyClient) {
         super();
         this.spotifyAuthService = spotifyAuthService;
+        this.spotifyClient = spotifyClient;
 
         this.login = this.login.bind(this);
         this.callback = this.callback.bind(this);
@@ -19,11 +22,6 @@ export class AuthController extends BaseController {
 
     public async login(req: Request, res: Response) {
         try {
-            // if (!req.body || !req.body.email) {
-            //     res.status(400).json({ code: 400, message: 'Payload data is incorrect!' });
-            //     return;
-            // }
-
             const token = getTokenFromCookie(req);
             
             if (!token) {
@@ -37,21 +35,20 @@ export class AuthController extends BaseController {
 
             if (!user) {
                 await this.spotifyAuthService.authorize(res);
-                res.status(200);
                 return;
             } else {
                 const isTokenValid = this.jwtService.verifyJWT(user.token);
-                if (isTokenValid && email === user.email) {
-                    await user.updateOne({lastLoggedIn: new Date(Date.now())});
+                if (isTokenValid) {
+                    await UserModel.updateOne({ _id: user._id }, {lastLoggedIn: new Date(Date.now())});
                     res.cookie('API_TOKEN', user.token, {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict',
                         maxAge: 3600000
                     });
-                } else if (email === user.email) {
+                } else {
                     const token = this.jwtService.createJWT(email);
-                    await user.updateOne({token: token, lastLoggedIn: new Date(Date.now())});
+                    await UserModel.updateOne({ _id: user._id }, {token: token, lastLoggedIn: new Date(Date.now())});
                     res.cookie('API_TOKEN', token, {
                         httpOnly: true,
                         secure: true,
@@ -59,7 +56,7 @@ export class AuthController extends BaseController {
                         maxAge: 3600000
                     });
                 }
-                res.status(200).json({ code: 200, message: 'User logged in!' });
+                res.redirect('http://localhost:3000');
                 return;
             }
         } catch (e) {
@@ -70,11 +67,41 @@ export class AuthController extends BaseController {
     public async callback (req: Request, res: Response) {
         try {
             const resp = await this.spotifyAuthService.callback(req, res);
-            this.logger.debug(JSON.stringify(resp));
-            res.send('lyó');
+
+            const spotifyUser = await this.spotifyClient.getUserInfo(String(resp.accessToken));
+
+            if (!spotifyUser) throw new Error('Couldnt find user on spotify!');
+
+            const user = await UserModel.findOne({ email: spotifyUser.email });
+            const token = this.jwtService.createJWT(spotifyUser.email);
+            const now = new Date(Date.now());
+
+            if (!user) {
+
+                const newUser = new User(
+                    spotifyUser.email, 
+                    token,
+                    now,
+                    now,
+                    resp);
+                
+                await UserModel.create(newUser);
+                res.redirect('http://localhost:3000');
+            } else {
+                await UserModel.updateOne({ _id: user._id }, { ...user.toObject(), lastLoggedIn: now, token, resp });
+
+            }
+
+            res.cookie('API_TOKEN', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 3600000
+            });
+            res.redirect('http://localhost:3000');
         } catch (e) {
             this.logger.error((e as Error).message);
-            res.send('fuck');
+            res.status(500).json({ code: 500, message: (e as Error).message });
         }
 
     } 
