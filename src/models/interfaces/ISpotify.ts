@@ -139,7 +139,7 @@ export namespace Spotify {
 
         interface UserAlbum {
             added_at: string,
-            album: Album[];
+            album: Album;
         }
 
         export interface UserAlbums {
