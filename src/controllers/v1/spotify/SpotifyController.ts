@@ -5,6 +5,8 @@ import { getTokenFromCookie } from '../../../utils/utils';
 import { Request, Response } from 'express';
 import SpotifyAuthService from '../../../services/SpotifyAuthService';
 import UserNotFoundError from '../../../models/errors/UserNotFoundError';
+import QueryParamError from '../../../models/errors/QueryParamError';
+import SpotifyAPIError from '../../../models/errors/SpotifyAPIError';
 
 @autoInjectable()
 export default class SpotifyController extends BaseController {
@@ -17,6 +19,7 @@ export default class SpotifyController extends BaseController {
         this.spotifyAuthService = spotifyAuthService;
 
         this.getUserInfo = this.getUserInfo.bind(this);
+        this.getUserAlbums = this.getUserAlbums.bind(this);
     }
 
     public async getUserInfo(req: Request, res: Response) {
@@ -30,8 +33,16 @@ export default class SpotifyController extends BaseController {
 
             res.status(200).json(userInfo); 
         } catch (e) {
+            if (e instanceof SpotifyAPIError) {
+                res.status(e.getCode()).json({ code: e.getCode(), message: e.message});
+                return;
+            }
+            if (e instanceof UserNotFoundError) {
+                res.status(404).json({ code: 404, message: e.message });
+                return;
+            }
             this.logger.error((e as Error).message);
-            res.status(500).json({ code: 500, message: 'Error while getting user info!' });
+            res.status(500).json({ code: 500, message: 'Error while fetching user info!' });
         }
     }
 
@@ -40,10 +51,10 @@ export default class SpotifyController extends BaseController {
             const { limit, offset } = req.query;
 
             if (!limit || offset === undefined)
-                throw new Error('Query params missing! Include limit and offset!');
+                throw new QueryParamError('Query params missing! Include limit and offset!');
 
             if (isNaN(Number(limit)) || isNaN(Number(offset)))
-                throw new Error('Query params must be numbers!');
+                throw new QueryParamError('Query params must be numbers!');
 
             const email = this.jwtService.getUser(getTokenFromCookie(req) || '');
             const accessToken = await this.spotifyAuthService.getAccessToken(email);
@@ -52,8 +63,16 @@ export default class SpotifyController extends BaseController {
 
             res.status(200).json(userAlbums);
         } catch (e) {
+            if (e instanceof QueryParamError) {
+                res.status(400).json({ code: 400, message: (e as QueryParamError).message });
+                return;
+            }
+            if (e instanceof SpotifyAPIError) {
+                res.status(e.getCode()).json({ code: e.getCode(), message: e.message });
+                return;
+            }
             this.logger.error((e as Error).message);
-            res.status(500).json({ code: 500, message: 'Error while getting user albums!' });
+            res.status(500).json({ code: 500, message: (e as Error).message });
         }
     }
 }

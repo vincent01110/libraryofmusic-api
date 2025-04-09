@@ -3,6 +3,7 @@ import { container } from 'tsyringe';
 import { JWTService } from '../services/JWTService';
 import Logger from '../utils/Logger';
 import { getTokenFromCookie } from '../utils/utils';
+import TokenNotIncludedError from '../models/errors/TokenNotIncludedError';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     const jwtService = container.resolve(JWTService);
@@ -11,7 +12,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     try {      
         const token = getTokenFromCookie(req);
 
-        if (!token) throw new Error('Token not included!');
+        if (!token) throw new TokenNotIncludedError('Token not included!');
 
         const isTokenValid = jwtService.verifyJWT(token);
 
