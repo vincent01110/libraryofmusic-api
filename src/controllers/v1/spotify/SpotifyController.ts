@@ -34,4 +34,26 @@ export default class SpotifyController extends BaseController {
             res.status(500).json({ code: 500, message: 'Error while getting user info!' });
         }
     }
+
+    public async getUserAlbums(req: Request, res: Response) {
+        try {
+            const { limit, offset } = req.query;
+
+            if (!limit || offset === undefined)
+                throw new Error('Query params missing! Include limit and offset!');
+
+            if (isNaN(Number(limit)) || isNaN(Number(offset)))
+                throw new Error('Query params must be numbers!');
+
+            const email = this.jwtService.getUser(getTokenFromCookie(req) || '');
+            const accessToken = await this.spotifyAuthService.getAccessToken(email);
+
+            const userAlbums = await this.spotifyClient.getUserAlbums(accessToken, +limit, +offset);
+
+            res.status(200).json(userAlbums);
+        } catch (e) {
+            this.logger.error((e as Error).message);
+            res.status(500).json({ code: 500, message: 'Error while getting user albums!' });
+        }
+    }
 }

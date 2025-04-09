@@ -26,4 +26,20 @@ export default class SpotifyClient {
 
         return rawUser as Spotify.User.UserInfo;
     }
+
+    public async getUserAlbums(accessToken: string, limit: number, offset: number) {
+        const response = await fetch(
+            `${this.apiUrl}/me/albums?limit=${limit}&offset=${offset}`,
+            {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+
+        if (!response.ok) throw new Error('Couldnt fetch user albums!');
+
+        const rawData = await response.json();
+
+        return rawData as Spotify.Album.UserAlbums;
+    }
 }
