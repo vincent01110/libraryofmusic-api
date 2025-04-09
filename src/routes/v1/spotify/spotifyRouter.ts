@@ -10,6 +10,7 @@ spotifyRouter.use(authMiddleware);
 
 spotifyRouter.get('/me', spotifyController.getUserInfo);
 spotifyRouter.get('/me/albums', spotifyController.getUserAlbums);
+spotifyRouter.get('/album/query', spotifyController.queryAllAlbums);
 spotifyRouter.get('/album/random', spotifyController.getRandomAlbums);
 spotifyRouter.get('/album/:id', spotifyController.getAlbum);
 

@@ -24,6 +24,7 @@ export default class SpotifyController extends BaseController {
         this.getUserAlbums = this.getUserAlbums.bind(this);
         this.getAlbum = this.getAlbum.bind(this);
         this.getRandomAlbums = this.getRandomAlbums.bind(this);
+        this.queryAllAlbums = this.queryAllAlbums.bind(this);
     }
 
     public async getUserInfo(req: Request, res: Response) {
@@ -136,6 +137,36 @@ export default class SpotifyController extends BaseController {
         } catch (e) {
             if (e instanceof QueryParamError) {
                 res.status(400).json({ code: 400, message: e.message });
+                return;
+            }
+            if (e instanceof SpotifyAPIError) {
+                res.status(e.getCode()).json({ code: e.getCode(), message: e.message });
+                return;
+            }
+            this.logger.error((e as Error).message);
+            res.status(500).json({ code: 500, message: (e as Error).message });
+        }
+    }
+
+    public async queryAllAlbums(req: Request, res: Response) {
+        try {
+            const { limit, offset, q } = req.query;
+
+            if (!limit || !offset || !q)
+                throw new QueryParamError('Query params missing! Include limit, offset and the query string!');
+
+            if (isNaN(Number(limit)) || isNaN(Number(offset)))
+                throw new QueryParamError('Query params must be numbers!');
+
+            const email = this.jwtService.getUser(getTokenFromCookie(req) || '');
+            const accessToken = await this.spotifyAuthService.getAccessToken(email);
+
+            const albums = await this.spotifyClient.queryAlbums(accessToken, String(q), +limit, +offset);
+
+            res.status(200).json(albums);
+        } catch (e) {
+            if (e instanceof QueryParamError) {
+                res.status(400).json({ code: 400, message: (e as QueryParamError).message });
                 return;
             }
             if (e instanceof SpotifyAPIError) {
