@@ -99,8 +99,6 @@ export namespace Spotify {
         }
 
         export interface Album {
-            added_at: string,
-            album: {
                 album_type: string,
                 total_tracks: number,
                 available_markets: string[],
@@ -137,7 +135,11 @@ export namespace Spotify {
                 genres: [],
                 label: string,
                 popularity: number
-            }
+        }
+
+        interface UserAlbum {
+            added_at: string,
+            album: Album[];
         }
 
         export interface UserAlbums {
@@ -147,7 +149,7 @@ export namespace Spotify {
             offset: number,
             previous: string,
             total: number,
-            items: Album[],
+            items: UserAlbum[],
         }
     }
 }

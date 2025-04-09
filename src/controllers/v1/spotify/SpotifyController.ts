@@ -7,6 +7,7 @@ import SpotifyAuthService from '../../../services/SpotifyAuthService';
 import UserNotFoundError from '../../../models/errors/UserNotFoundError';
 import QueryParamError from '../../../models/errors/QueryParamError';
 import SpotifyAPIError from '../../../models/errors/SpotifyAPIError';
+import ParamError from '../../../models/errors/ParamError';
 
 @autoInjectable()
 export default class SpotifyController extends BaseController {
@@ -20,6 +21,7 @@ export default class SpotifyController extends BaseController {
 
         this.getUserInfo = this.getUserInfo.bind(this);
         this.getUserAlbums = this.getUserAlbums.bind(this);
+        this.getAlbum = this.getAlbum.bind(this);
     }
 
     public async getUserInfo(req: Request, res: Response) {
@@ -65,6 +67,33 @@ export default class SpotifyController extends BaseController {
         } catch (e) {
             if (e instanceof QueryParamError) {
                 res.status(400).json({ code: 400, message: (e as QueryParamError).message });
+                return;
+            }
+            if (e instanceof SpotifyAPIError) {
+                res.status(e.getCode()).json({ code: e.getCode(), message: e.message });
+                return;
+            }
+            this.logger.error((e as Error).message);
+            res.status(500).json({ code: 500, message: (e as Error).message });
+        }
+    }
+
+    public async getAlbum(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+
+            if (!id)
+                throw new ParamError('Id parameter is missing!');
+
+            const email = this.jwtService.getUser(getTokenFromCookie(req) || '');
+            const accessToken = await this.spotifyAuthService.getAccessToken(email);
+
+            const album = await this.spotifyClient.getAlbum(accessToken, id);
+
+            res.status(200).json(album);
+        } catch (e) {
+            if (e instanceof ParamError) {
+                res.status(400).json({ code: 400, message: e.message });
                 return;
             }
             if (e instanceof SpotifyAPIError) {

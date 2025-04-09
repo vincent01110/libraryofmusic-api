@@ -25,6 +25,12 @@ export default class SpotifyClient {
         return response;
     }
 
+    public async getAlbum(accessToken: string, id: string) {
+        const response = await this.GET<Spotify.Album.Album>(`/albums/${id}`, accessToken);
+
+        return response;
+    }
+
     private async GET<T>(path: string, accessToken: string, limit?: number, offset?: number): Promise<T> {
         const url = limit && offset ? 
             `${this.apiUrl}${path}?limit=${limit}&offset=${offset}` 
