@@ -5,6 +5,7 @@ import { User, UserModel } from '../../../models/User';
 import SpotifyAuthService from '../../../services/SpotifyAuthService';
 import { getTokenFromCookie } from '../../../utils/utils';
 import SpotifyClient from '../../../utils/SpotifyClient';
+import SpotifyAPIError from '../../../models/errors/SpotifyAPIError';
 
 @autoInjectable()
 export class AuthController extends BaseController {
@@ -37,7 +38,7 @@ export class AuthController extends BaseController {
                 await this.spotifyAuthService.authorize(res);
                 return;
             } else {
-                const isTokenValid = this.jwtService.verifyJWT(user.token);
+                const isTokenValid = await this.jwtService.verifyJWT(user.token);
                 if (isTokenValid) {
                     await UserModel.updateOne({ _id: user._id }, {lastLoggedIn: new Date(Date.now())});
                     res.cookie('API_TOKEN', user.token, {
@@ -70,14 +71,11 @@ export class AuthController extends BaseController {
 
             const spotifyUser = await this.spotifyClient.getUserInfo(String(resp.accessToken));
 
-            if (!spotifyUser) throw new Error('Couldnt find user on spotify!');
-
             const user = await UserModel.findOne({ email: spotifyUser.email });
             const token = this.jwtService.createJWT(spotifyUser.email);
             const now = new Date(Date.now());
 
             if (!user) {
-
                 const newUser = new User(
                     spotifyUser.email, 
                     token,
@@ -86,7 +84,14 @@ export class AuthController extends BaseController {
                     resp);
                 
                 await UserModel.create(newUser);
+                res.cookie('API_TOKEN', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'strict',
+                    maxAge: 3600000
+                });
                 res.redirect('http://localhost:3000');
+                return;
             } else {
                 await UserModel.updateOne({ _id: user._id }, { ...user.toObject(), lastLoggedIn: now, token, resp });
 
@@ -100,6 +105,10 @@ export class AuthController extends BaseController {
             });
             res.redirect('http://localhost:3000');
         } catch (e) {
+            if (e instanceof SpotifyAPIError) {
+                const err = e as SpotifyAPIError;
+                res.status(err.getCode()).json({ code: e.getCode(), messsage: e.message });
+            }
             this.logger.error((e as Error).message);
             res.status(500).json({ code: 500, message: (e as Error).message });
         }

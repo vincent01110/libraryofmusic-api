@@ -7,6 +7,7 @@ import { SpotifyAuth } from '../models/SpotifyAuth';
 import { Spotify } from '../models/interfaces/ISpotify';
 import { UserModel } from '../models/User';
 import UserNotFoundError from '../models/errors/UserNotFoundError';
+import SpotifyAPIError from '../models/errors/SpotifyAPIError';
 dotenv.config();
 
 @autoInjectable()
@@ -77,15 +78,18 @@ export default class SpotifyAuthService {
             json: true
         };
 
-        try {
-            const response = await fetch('https://accounts.spotify.com/api/token', authOptions);
-            const rawData = await response.json() as Spotify.Auth.Payload;
-            const expiresAt = Date.now() + rawData.expires_in * 1000; 
-            return new SpotifyAuth(rawData.access_token, rawData.token_type, rawData.scope, expiresAt, rawData.refresh_token);
-        } catch (e) {
-            this.logger.error('Error while fetching tokens: ' + (e as Error).message);
-            throw new Error((e as Error).message);
-        }
+        const response = await fetch('https://accounts.spotify.com/api/token', authOptions);
+
+        const rawData = await response.json();
+
+        if (!response.ok)
+            throw new SpotifyAPIError(rawData.message, response.status);
+
+        const expiresAt = Date.now() + rawData.expires_in * 1000;
+
+        const tokens = rawData as Spotify.Auth.Payload;
+        
+        return new SpotifyAuth(tokens.access_token, tokens.token_type, tokens.scope, expiresAt, tokens.refresh_token);
     }
 
     public async getAccessToken(email: string): Promise<string> {
@@ -93,8 +97,13 @@ export default class SpotifyAuthService {
 
         if (!user || !user.spotifyAuth) throw new UserNotFoundError('User not found!');
 
-        if (user.spotifyAuth?.expiresAt < Date.now()) {
-            return (await this.refreshToken(user.spotifyAuth.refreshToken)).accessToken;
+        if (+user.spotifyAuth?.expiresAt < Date.now()) {
+            const tokens = await this.refreshToken(user.spotifyAuth.refreshToken);
+            const refreshToken = user.spotifyAuth.refreshToken;
+            await UserModel.updateOne({ email }, {...user.toObject(), 
+                spotifyAuth: {...tokens, refreshToken: tokens.refreshToken ?? refreshToken}});
+
+            return tokens.accessToken;
         }
 
         return user.spotifyAuth.accessToken;
@@ -102,28 +111,27 @@ export default class SpotifyAuthService {
 
 
     public async refreshToken(refreshToken: string): Promise<SpotifyAuth> {
-        try {
-            const response = await fetch('https://accounts.spotify.com/api/token', {
-                method: 'POST',
-                headers: { 
-                    'content-type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Basic ' + (Buffer.from(this.clientId + ':' + this.clientSecret).toString('base64')) 
-                },
-                body: new URLSearchParams({
-                    grant_type: 'refresh_token',
-                    refresh_token: refreshToken
-                }).toString(), 
-            });
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: { 
+                'content-type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + (Buffer.from(this.clientId + ':' + this.clientSecret).toString('base64')) 
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            }).toString(), 
+        });
 
-            if (!response.ok) throw new Error('Couldnt get refresh token!');
+        const rawBody = await response.json();
 
-            const newTokens: Spotify.Auth.Payload = await response.json();
-            const authData = new SpotifyAuth(newTokens.access_token, newTokens.token_type, newTokens.scope, newTokens.expires_in, newTokens.refresh_token);
+        if (!response.ok) throw new SpotifyAPIError(rawBody.message, response.status);
 
-            return authData;
-        } catch (e) {
-            throw new Error((e as Error).message);
-        }
+        const newTokens = rawBody as Spotify.Auth.Payload;
+        const expiresAt = Date.now() + newTokens.expires_in * 1000; 
+        const authData = new SpotifyAuth(newTokens.access_token, newTokens.token_type, newTokens.scope, expiresAt, newTokens.refresh_token);
+
+        return authData;
     }
 
     private generateRandomString(length: number): string{
