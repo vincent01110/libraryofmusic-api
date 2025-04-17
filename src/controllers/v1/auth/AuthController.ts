@@ -11,6 +11,7 @@ import SpotifyAPIError from '../../../models/errors/SpotifyAPIError';
 export class AuthController extends BaseController {
     private spotifyAuthService: SpotifyAuthService;
     private spotifyClient: SpotifyClient;
+    private readonly maxAge = 172800000;
 
     constructor(spotifyAuthService: SpotifyAuthService, spotifyClient: SpotifyClient) {
         super();
@@ -45,7 +46,7 @@ export class AuthController extends BaseController {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict',
-                        maxAge: 3600000
+                        maxAge: this.maxAge
                     });
                 } else {
                     const token = this.jwtService.createJWT(email);
@@ -54,7 +55,7 @@ export class AuthController extends BaseController {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict',
-                        maxAge: 3600000
+                        maxAge: this.maxAge
                     });
                 }
                 res.redirect('http://localhost:3000');
@@ -88,7 +89,7 @@ export class AuthController extends BaseController {
                     httpOnly: true,
                     secure: true,
                     sameSite: 'strict',
-                    maxAge: 3600000
+                    maxAge: this.maxAge
                 });
                 res.redirect('http://localhost:3000');
                 return;

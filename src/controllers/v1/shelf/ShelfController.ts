@@ -99,7 +99,7 @@ export class ShelfController {
                 return;
             }
             if (e instanceof InvalidShelfError) {
-                res.status(401).json({ code: 401, message: (e as InvalidShelfError).message });
+                res.status(400).json({ code: 400, message: (e as InvalidShelfError).message });
                 return;
             }
             this.logger.error(`Error: ${(e as Error).message}`);
