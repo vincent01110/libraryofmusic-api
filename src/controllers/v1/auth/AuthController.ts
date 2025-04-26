@@ -1,6 +1,6 @@
 import { autoInjectable } from 'tsyringe';
 import { BaseController } from '../BaseController';
-import { Request, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 import { User, UserModel } from '../../../models/User';
 import SpotifyAuthService from '../../../services/SpotifyAuthService';
 import { getTokenFromCookie } from '../../../utils/utils';
@@ -12,6 +12,13 @@ export class AuthController extends BaseController {
     private spotifyAuthService: SpotifyAuthService;
     private spotifyClient: SpotifyClient;
     private readonly maxAge = 172800000;
+    private cookieConfig: CookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: this.maxAge,
+        path: '/'
+    };
 
     constructor(spotifyAuthService: SpotifyAuthService, spotifyClient: SpotifyClient) {
         super();
@@ -42,21 +49,11 @@ export class AuthController extends BaseController {
                 const isTokenValid = await this.jwtService.verifyJWT(user.token);
                 if (isTokenValid) {
                     await UserModel.updateOne({ _id: user._id }, {lastLoggedIn: new Date(Date.now())});
-                    res.cookie('API_TOKEN', user.token, {
-                        httpOnly: true,
-                        secure: true,
-                        sameSite: 'strict',
-                        maxAge: this.maxAge
-                    });
+                    res.cookie('API_TOKEN', user.token, this.cookieConfig);
                 } else {
-                    const token = this.jwtService.createJWT(email);
-                    await UserModel.updateOne({ _id: user._id }, {token: token, lastLoggedIn: new Date(Date.now())});
-                    res.cookie('API_TOKEN', token, {
-                        httpOnly: true,
-                        secure: true,
-                        sameSite: 'strict',
-                        maxAge: this.maxAge
-                    });
+                    const newToken = this.jwtService.createJWT(user.email);
+                    await UserModel.updateOne({ _id: user._id }, {token: newToken, lastLoggedIn: new Date(Date.now())});
+                    res.cookie('API_TOKEN', newToken, this.cookieConfig);
                 }
                 res.redirect('http://localhost:3000');
                 return;
@@ -73,10 +70,10 @@ export class AuthController extends BaseController {
             const spotifyUser = await this.spotifyClient.getUserInfo(String(resp.accessToken));
 
             const user = await UserModel.findOne({ email: spotifyUser.email });
-            const token = this.jwtService.createJWT(spotifyUser.email);
             const now = new Date(Date.now());
-
+            
             if (!user) {
+                const token = this.jwtService.createJWT(spotifyUser.email);
                 const newUser = new User(
                     spotifyUser.email, 
                     token,
@@ -85,30 +82,22 @@ export class AuthController extends BaseController {
                     resp);
                 
                 await UserModel.create(newUser);
-                res.cookie('API_TOKEN', token, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'strict',
-                    maxAge: this.maxAge
-                });
-                res.redirect('http://localhost:3000');
-                return;
+                res.cookie('API_TOKEN', token, this.cookieConfig);
             } else {
-                await UserModel.updateOne({ _id: user._id }, { ...user.toObject(), lastLoggedIn: now, token, resp });
-
+                const isTokenValid = await this.jwtService.verifyJWT(user.token);
+                if (isTokenValid) {
+                    await UserModel.updateOne({ _id: user._id }, {lastLoggedIn: new Date(Date.now())});
+                    res.cookie('API_TOKEN', user.token, this.cookieConfig);
+                } else {
+                    const newToken = this.jwtService.createJWT(user.email);
+                    await UserModel.updateOne({ _id: user._id }, {token: newToken, lastLoggedIn: new Date(Date.now())});
+                    res.cookie('API_TOKEN', newToken, this.cookieConfig);
+                }
             }
-
-            res.cookie('API_TOKEN', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 3600000
-            });
             res.redirect('http://localhost:3000');
         } catch (e) {
             if (e instanceof SpotifyAPIError) {
-                const err = e as SpotifyAPIError;
-                res.status(err.getCode()).json({ code: e.getCode(), messsage: e.message });
+                res.status(e.getCode()).json({ code: e.getCode(), messsage: e.message });
             }
             this.logger.error((e as Error).message);
             res.status(500).json({ code: 500, message: (e as Error).message });

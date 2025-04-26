@@ -3,8 +3,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import Logger from '../utils/Logger';
 import { JWTPayload } from '../models/interfaces/IJWTPayload';
-import { UserModel } from '../models/User';
-import UserNotFoundError from '../models/errors/UserNotFoundError';
+import InvalidJWTError from '../models/errors/InvalidJWTError';
 dotenv.config();
 
 @autoInjectable()
@@ -31,10 +30,9 @@ export class JWTService {
         if (!secret) throw new Error('JWT secret not found');
 
         try {
-            jwt.verify(token, secret);
-            const user = await UserModel.findOne({ token });
+            const verified = jwt.verify(token, secret);
 
-            if (!user) throw new UserNotFoundError('Token doesnt exists!');
+            if (!verified) throw new InvalidJWTError('Token is Invalid!');
 
             return true;
         } catch (e) {

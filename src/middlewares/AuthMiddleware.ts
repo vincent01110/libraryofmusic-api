@@ -14,7 +14,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
         if (!token) throw new TokenNotIncludedError('Token not included!');
 
-        const isTokenValid = jwtService.verifyJWT(token);
+        const isTokenValid = await jwtService.verifyJWT(token);
 
         if (!isTokenValid) throw new Error('Token is invalid!');
 
@@ -22,6 +22,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
     } catch (e) {
         logger.error('Authentication Error: ' + (e as Error).message);
+
         res.status(401).json({ code: 401, message: (e as Error).message});
         return;
     }
