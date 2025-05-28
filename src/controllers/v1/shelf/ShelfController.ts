@@ -8,6 +8,7 @@ import UserNotFoundError from '../../../models/errors/UserNotFoundError';
 import ShelfNotFoundError from '../../../models/errors/ShelfNotFoundError';
 import { ShelfDTO } from '../../../models/dto/ShelfDTO';
 import InvalidShelfError from '../../../models/errors/InvalidShelfError';
+import { Album } from '../../../models/Album';
 
 @autoInjectable()
 export class ShelfController {
@@ -23,6 +24,7 @@ export class ShelfController {
         this.getShelves = this.getShelves.bind(this);
         this.getShelfById = this.getShelfById.bind(this);
         this.createShelf = this.createShelf.bind(this);
+        this.addAlbumToShelf = this.addAlbumToShelf.bind(this);
         this.updateShelf = this.updateShelf.bind(this);
         this.deleteShelfById = this.deleteShelfById.bind(this);
     }
@@ -84,7 +86,7 @@ export class ShelfController {
 
             if (!user) throw new UserNotFoundError('User not found!');
 
-            if (!req.body.name || !req.body.items || !req.body.color) {
+            if (!req.body.name || !req.body.artists || !req.body.items || !req.body.color) {
                 throw new InvalidShelfError('Shelf structure is invalid!');
             }
 
@@ -129,6 +131,43 @@ export class ShelfController {
             const updated = await ShelfModel.findOne({ _id: id, user: user });
 
             res.status(200).json({ code: 200, message: 'Shelf updated successfully!', updated });
+            return;
+        } catch (e) {
+            if (e instanceof ShelfNotFoundError) {
+                res.status(404).json({ code: 404, message: (e as ShelfNotFoundError).message });
+                return;
+            }
+            this.logger.error(`Error: ${(e as Error).message}`);
+            res.status(500).json({code: 500, message: 'Error updating Shelf!'});
+            return;
+        }
+    }
+
+    async addAlbumToShelf(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+
+            if (!id || !isIdValid(id)) {
+                res.status(400).json({ code: 400, message: `The given id:${id} is not valid!` });
+                return;
+            }
+
+            const user = this.jwtService.getUser(getTokenFromCookie(req) || '');
+
+            if (!user) throw new UserNotFoundError('User not found!');
+
+            const shelf = await ShelfModel.findOne({ _id: id, user: user });
+
+            if (!shelf) throw new ShelfNotFoundError(`Shelf:${req.params.id} not found!`);
+
+            const album: Album = req.body;
+
+            const updated = await ShelfModel.updateOne(
+                { _id: shelf._id },
+                { $push: { items: album } }
+            );
+
+            res.status(200).json({ code: 200, message: 'Album added to shelf!', updated });
             return;
         } catch (e) {
             if (e instanceof ShelfNotFoundError) {

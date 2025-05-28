@@ -14,6 +14,8 @@ shelfRouter.get('/:id', shelfController.getShelfById);
 
 shelfRouter.post('/', shelfController.createShelf);
 
+shelfRouter.patch('/:id/add-album', shelfController.addAlbumToShelf);
+
 shelfRouter.put('/:id', shelfController.updateShelf);
 
 shelfRouter.delete('/:id', shelfController.deleteShelfById);
