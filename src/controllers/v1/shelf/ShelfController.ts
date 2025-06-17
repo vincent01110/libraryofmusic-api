@@ -86,14 +86,16 @@ export class ShelfController {
 
             if (!user) throw new UserNotFoundError('User not found!');
 
-            if (!req.body.name || !req.body.artists || !req.body.items || !req.body.color) {
+            if (!req.body.name || !req.body.color) {
                 throw new InvalidShelfError('Shelf structure is invalid!');
             }
 
-            const payload = new ShelfDTO(req.body.name, req.body.items, req.body.color);
+            this.logger.debug(JSON.stringify(req.body));
 
-            await ShelfModel.create({...payload, user: user, createdAt: new Date(Date.now())});
-            res.status(201).send('Shelf created');
+            const payload = new ShelfDTO(req.body.name, req.body.color);
+
+            const createdShelf = await ShelfModel.create({...payload, items: [], user: user, createdAt: new Date(Date.now())});
+            res.status(201).json(createdShelf);
             return;
         } catch (e) {
             if (e instanceof UserNotFoundError) {
@@ -192,11 +194,11 @@ export class ShelfController {
 
             if (!user) throw new UserNotFoundError('User not found!');
 
-            const shelf = await ShelfModel.find({ _id: id, user: user });
+            const shelf = await ShelfModel.findOne({ _id: id, user: user });
 
             if (!shelf) throw new ShelfNotFoundError(`Shelf:${req.params.id} not found!`);
 
-            await ShelfModel.deleteOne(shelf);
+            await ShelfModel.deleteOne(shelf._id);
 
             res.status(200).json({ code: 200, message: 'Shelf deleted successfully!', shelf });
             return;
